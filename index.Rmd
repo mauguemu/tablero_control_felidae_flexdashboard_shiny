@@ -111,13 +111,6 @@ filtrarRegistros <- reactive({
       felidae %>%
       dplyr::select(species, stateProvince, eventDate)
     
-    # Filtrado de felidae por fecha
-    felidae_filtrado <-
-      felidae_filtrado %>%
-      filter(
-        eventDate >= as.Date(input$fecha[1], origin = "1970-01-01") &
-          eventDate <= as.Date(input$fecha[2], origin = "1970-01-01")
-      )
     # Filtrado de felidae por especie
     if (input$especie != "Todas") {
       felidae_filtrado <-
@@ -129,16 +122,19 @@ filtrarRegistros <- reactive({
       felidae_filtrado <-
         felidae_filtrado %>%
         filter(stateProvince == input$provincia)
+    }
     
-    
-      }
+    # Filtrado de felidae por fecha
+    felidae_filtrado <-
+      felidae_filtrado %>%
+      filter(
+        eventDate >= as.Date(input$fecha[1], origin = "1970-01-01") &
+          eventDate <= as.Date(input$fecha[2], origin = "1970-01-01")
+    )
       
     return (felidae_filtrado)
     
 })
-
-
-
 
 ```
 
