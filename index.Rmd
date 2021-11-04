@@ -20,6 +20,8 @@ library(rgdal)
 library(DT)
 library(plotly)
 library(leaflet)
+library(leaflet.extras)
+library(leafem)
 library(shiny)
 library(shinydashboard)
 ```
@@ -134,6 +136,7 @@ filtrarRegistros <- reactive({
       
     return (felidae_filtrado)
     
+    
 })
 
 ```
@@ -180,7 +183,11 @@ leaflet() %>%
       ", ",
       registros$eventDate
     )
-  )
+  )%>%
+  addSearchOSM()%>%
+  addResetMapButton()%>%
+  addMouseCoordinates()
+  
 })
 ```
 
