@@ -111,7 +111,7 @@ filtrarRegistros <- reactive({
     # Remoción de geometrías y selección de columnas
     felidae_filtrado <-
       felidae %>%
-      dplyr::select(species, stateProvince, eventDate)
+      dplyr::select(species, stateProvince, eventDate, occurrenceID)
     
     # Filtrado de felidae por especie
     if (input$especie != "Todas") {
@@ -182,7 +182,15 @@ leaflet() %>%
       registros$stateProvince,
       ", ",
       registros$eventDate
-    )
+    ),
+    popup = paste0("<strong>Especie: </strong>",
+                   "<em>",
+                   registros$species,
+                   "</em>",
+                   "<br>",
+                   "<strong>Provincia: </strong>",
+                   registros$stateProvince)
+    
   )%>%
   addSearchOSM()%>%
   addResetMapButton()%>%
