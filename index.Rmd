@@ -52,11 +52,95 @@ altitud <-
   rast(
     "/vsicurl/https://raw.githubusercontent.com/tpb728O-programaciongeoespacialr/2021ii/master/datos/worldclim/altitud.tif"
   )
+
+# Lista ordenada de especies + "Todas"
+lista_especies <- unique(felidae$species)
+lista_especies <- sort(lista_especies)
+lista_especies <- c("Todas", lista_especies)
+
+# Lista ordenada de provincias + "Todas"
+lista_provincias <- unique(felidae$stateProvince)
+lista_provincias <- sort(lista_provincias)
+lista_provincias <- c("Todas", lista_provincias)
+
+
+
 ```
 
 Column {.sidebar}
 -----------------------------------------------------------------------
 
+```{r filtros}
+selectInput(
+  inputId = "especie",
+  label = "Especie",
+  choices = lista_especies,
+  selected = "Todas"
+)
+
+selectInput(
+  inputId = "provincia",
+  label = "Provincia",
+  choices = lista_provincias,
+  selected = "Todas"
+)
+
+dateRangeInput(
+          inputId = "fecha",
+          label = "Fecha",
+          start = "1970-01-01",
+          end   = Sys.Date(),
+          separator = " a ",
+          language = "es"
+        )
+
+#numericRangeInput(
+ # inputId,
+  #label,
+  #value,
+  #width = NULL,
+  #separator = " to ",
+  #min = NA,
+  #max = NA,
+  #step = NA
+#)
+
+filtrarRegistros <- reactive({
+    # Remoción de geometrías y selección de columnas
+    felidae_filtrado <-
+      felidae %>%
+      dplyr::select(species, stateProvince, eventDate)
+    
+    # Filtrado de felidae por fecha
+    felidae_filtrado <-
+      felidae_filtrado %>%
+      filter(
+        eventDate >= as.Date(input$fecha[1], origin = "1970-01-01") &
+          eventDate <= as.Date(input$fecha[2], origin = "1970-01-01")
+      )
+    # Filtrado de felidae por especie
+    if (input$especie != "Todas") {
+      felidae_filtrado <-
+        felidae_filtrado %>%
+        filter(species == input$especie)
+    }
+    # Filtrado de felidae por provincia
+    if (input$provincia != "Todas") {
+      felidae_filtrado <-
+        felidae_filtrado %>%
+        filter(stateProvince == input$provincia)
+    
+    
+      }
+      
+    return (felidae_filtrado)
+    
+})
+
+
+
+
+```
 
 Row
 -----------------------------------------------------------------------
@@ -64,6 +148,12 @@ Row
 ### Mapa de distribución
 
 ```{r mapa, warning=FALSE}
+
+renderLeaflet({
+    registros <-
+      filtrarRegistros() 
+
+
 # Conversión del objeto altitud a la clase RasterLayer
 altitud_rl <- raster::raster(altitud)
 # Mapa Leaflet con capas de provincias y registros de presencia de felinos
@@ -82,28 +172,34 @@ leaflet() %>%
     weight = 1.0,
   ) %>%
   addCircleMarkers(
-    data = felidae,
+    data = registros,
     stroke = TRUE,
     radius = 4,
     fillColor = 'red',
     fillOpacity = 1,
     label = paste0(
-      felidae$species,
+      registros$species,
       ", ",
-      felidae$stateProvince,
+      registros$stateProvince,
       ", ",
-      felidae$eventDate
+      registros$eventDate
     )
   )
+})
 ```
 
 ### Registros de presencia
 
 ```{r tabla}
-felidae %>%
-  st_drop_geometry() %>%
-  select(scientificName, stateProvince, eventDate) %>%
-  datatable()
+renderDT({
+  registros <-
+    filtrarRegistros()
+  
+  registros %>%
+    st_drop_geometry() %>%
+    datatable()
+  
+})
 ```
 
 Row
@@ -112,8 +208,13 @@ Row
 ### Estacionalidad
 
 ```{r grafico-estacionalidad}
+
+renderPlotly({
+    registros <- filtrarRegistros()
+
+
 # Gráfico de estacionalidad
-felidae %>%
+registros %>%
   st_drop_geometry() %>%
   group_by(mes = format(as.Date(eventDate, "%Y-%m-%d"), "%m")) %>%
   summarize(suma_registros = n()) %>%
@@ -128,4 +229,6 @@ felidae %>%
   ) %>%
   layout(xaxis = list(title = "Mes"),
          yaxis = list(title = "Cantidad de registros"))
+
+})
 ```
